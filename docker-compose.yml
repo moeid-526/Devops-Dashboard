@@ -1,0 +1,42 @@
+services:
+  backend:
+    build:
+      context: .  # Build from project root
+      dockerfile: ./src/backend/Dockerfile
+    container_name: devops-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=development
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GRAFANA_URL=http://host.docker.internal:3000
+      - GRAFANA_API_KEY=${GRAFANA_API_KEY}
+      - GRAFANA_DATASOURCE=Prometheus
+      - PROMETHEUS_URL=http://host.docker.internal:9090
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+    networks:
+      - devops-net
+
+  frontend:
+    build:
+      context: .  # Build from project root
+      dockerfile: ./src/frontend/Dockerfile
+    container_name: devops-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://backend:5000
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - devops-net
+
+networks:
+  devops-net:
+    driver: bridge
